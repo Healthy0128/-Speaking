@@ -125,6 +125,60 @@ function complete(){cancelListening();stopAudio();active=false;
 function beginTimer(){clearInterval(timerHandle);if(!config.time){$('timer').textContent='∞';return}remaining=config.time;tickEnd=Date.now()+config.time*1000;$('timer').textContent=remaining;timerHandle=setInterval(()=>{remaining=Math.max(0,Math.ceil((tickEnd-Date.now())/1000));$('timer').textContent=remaining;if(!remaining&&active){finish('',true)}},100);}
 function cancelListening(){active=false;listenToken++;clearInterval(timerHandle);timerHandle=null;if(recognition){const r=recognition;recognition=null;try{r.abort()}catch(e){}}}
 function finish(transcript,timedOut=false){if(!active)return;cancelListening();attempts++;let g=grade(current.en,transcript,config.threshold);let ok=!timedOut&&g.pass;if(ok){streak++;solved.add(current.id)}else streak=0;const over=ok&&(config.goal==='streak'?streak>=config.streak:solved.size===queue.length);$('mic-state').textContent=timedOut?'時間切れ':ok?'正解！':'もう一度！';$('play-feedback').className='result '+(ok?'good':'bad');$('play-feedback').innerHTML=`<b>${timedOut?'⏰ 時間切れ':ok?'✅ 正解！':'🔁 もう一度チャレンジ'}</b><br>認識結果：${escapeHTML(transcript||'（認識できませんでした）')}<br>単語一致率：<b>${timedOut?'—':g.percent+'%'}</b> / 必要：${config.threshold}%`;$('play-answer').classList.remove('hidden');$('play-en').textContent=current.en;$('mic-btn').textContent='🎤 同じ問題でもう一度';$('mic-btn').disabled=false;$('recognition-status').textContent=ok?'次の問題に進めます。':'お手本を聞いて練習してから、もう一度答えよう。';refreshProgress();if(over){$('mic-btn').disabled=true;$('play-next').textContent='結果を見る →';$('play-next').onclick=()=>complete();}else{$('play-next').textContent='次の問題へ →';$('play-next').onclick=()=>nextQuestion();}}
-function listen(){stopAudio();if(active){cancelListening();$('mic-state').textContent='中断';$('mic-btn').textContent='🎤 マイクで答える';return}let SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){$('recognition-status').textContent='このブラウザでは音声認識が使えません。ChromeまたはEdgeでHTTPS環境をお試しください。';return}let token=++listenToken;let r=new SR();recognition=r;r.lang='en-US';r.interimResults=true;r.continuous=false;r.maxAlternatives=1;let finalText='',provisional='';active=true;$('mic-btn').textContent='■ 録音を中止';$('mic-state').textContent='聞き取り中…';$('recognition-status').textContent='英語で話してください。';r.onresult=e=>{if(!active||token!==listenToken)return;provisional='';for(let i=0;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)finalText+=t+' ';else provisional+=t+' '}const text=(finalText+provisional).trim();$('recognition-status').textContent=`認識中：${text||'…'}`;if(finalText.trim())finish(finalText.trim());};r.onerror=e=>{if(!active||token!==listenToken)return;const msg=e.error==='not-allowed'?'マイクの使用が許可されていません。ブラウザの設定を確認してください。':`音声認識エラー：${e.error}`;cancelListening();$('mic-state').textContent='エラー';$('mic-btn').textContent='🎤 マイクで答える';$('recognition-status').textContent=msg};r.onend=()=>{if(!active||token!==listenToken)return;if(finalText.trim())finish(finalText.trim());else if(provisional.trim())finish(provisional.trim());else{cancelListening();$('mic-state').textContent='聞き取れませんでした';$('mic-btn').textContent='🎤 もう一度';$('recognition-status').textContent='声を認識できませんでした。再挑戦してください。'}};try{r.start();beginTimer()}catch(e){cancelListening();$('recognition-status').textContent='マイクを開始できませんでした：'+e.message;}}
+function listen(){
+ stopAudio();
+ if(active){cancelListening();$('mic-state').textContent='中断';$('mic-btn').textContent='🎤 マイクで答える';return;}
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ const status=$('recognition-status');
+ if(!SR){status.textContent='このブラウザはWeb Speech音声認識APIに対応していません。音声認識対応ブラウザを使用してください。';return;}
+ const token=++listenToken;
+ let r;
+ try{r=new SR();}catch(err){status.textContent='音声認識を初期化できません：'+err.message;return;}
+ recognition=r;r.lang='en-US';r.interimResults=true;r.continuous=false;r.maxAlternatives=1;
+ let finalText='',provisional='',started=false;
+ active=true;
+ $('mic-btn').textContent='■ 録音を中止';
+ $('mic-state').textContent='準備中…';
+ status.textContent='マイクの起動・許可を確認しています…';
+ r.onstart=()=>{if(!active||token!==listenToken)return;started=true;$('mic-state').textContent='聞き取り中…';status.textContent='英語を話してください。';beginTimer();};
+ r.onresult=e=>{
+   if(!active||token!==listenToken)return;
+   finalText='';provisional='';
+   for(let i=0;i<e.results.length;i++){
+     const result=e.results[i],word=result[0]?.transcript||'';
+     if(result.isFinal)finalText+=word+' ';else provisional+=word+' ';
+   }
+   const heard=(finalText+provisional).trim();
+   status.textContent='認識中：'+(heard||'…');
+   if(finalText.trim())finish(finalText.trim());
+ };
+ r.onerror=e=>{
+   if(!active||token!==listenToken)return;
+   const code=e.error||'unknown';
+   const hints={
+     'not-allowed':'マイクへのアクセスが拒否されました。サイトの権限と学校の管理設定を確認してください。',
+     'service-not-allowed':'音声認識サービスが利用できません。管理Edgeのポリシーや認識サービスへのアクセスを確認してください。',
+     'network':'音声認識サービスに接続できません。学校のネットワーク・管理ポリシーによる制限の可能性があります。',
+     'audio-capture':'マイクを取得できません。OSの入力デバイスと権限を確認してください。',
+     'no-speech':'英語が検出されませんでした。イヤホンマイクを使い、もう一度試してください。',
+     'language-not-supported':'英語(en-US)の音声認識がサポートされていません。',
+     'aborted':'認識が中断されました。'
+   };
+   cancelListening();$('mic-state').textContent='認識エラー';$('mic-btn').textContent='🎤 もう一度試す';
+   status.textContent='エラーコード：'+code+'。'+(hints[code]||'ブラウザの音声認識処理が失敗しました。');
+ };
+ r.onend=()=>{
+   if(!active||token!==listenToken)return;
+   const answer=(finalText||provisional).trim();
+   if(answer)finish(answer);
+   else{
+     cancelListening();$('mic-state').textContent='聞き取れませんでした';
+     $('mic-btn').textContent='🎤 もう一度';
+     status.textContent='認識が終了しましたが文字が返ってきませんでした。開始イベント：'+(started?'あり':'なし')+'。学校の管理Edgeで制限されている可能性もあります。';
+   }
+ };
+ try{r.start();}
+ catch(err){cancelListening();$('mic-state').textContent='起動失敗';$('mic-btn').textContent='🎤 もう一度試す';status.textContent='マイクを開始できませんでした：'+err.message;}
+}
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>startMode(b.dataset.mode));$('study-prev').onclick=()=>{stopAudio();studyIndex=(studyIndex-1+unitSentences().length)%unitSentences().length;renderStudy()};$('study-next').onclick=()=>{stopAudio();studyIndex=(studyIndex+1)%unitSentences().length;renderStudy()};$('play-normal').onclick=()=>speak(unitSentences()[studyIndex].en,1,$('study-en'));$('play-slow').onclick=()=>speak(unitSentences()[studyIndex].en,.7,$('study-en'));$('stop-speech').onclick=stopAudio;document.querySelector('.highlight').onchange=()=>highlight($('study-en'),-1);$('custom-goal').onchange=()=>{$('streak-field').classList.toggle('hidden',$('custom-goal').value!=='streak')};$('custom-start').onclick=()=>{let st=Number($('custom-streak').value);if(!Number.isInteger(st)||st<1||st>100)return alert('連続正解数は1〜100で指定してください');config={label:'カスタムチャレンジ',threshold:Number($('custom-threshold').value),goal:$('custom-goal').value,streak:st,time:Number($('custom-time').value),category:$('custom-category').value};initialize()};$('mic-btn').onclick=listen;$('play-hint').onclick=()=>{$('play-answer').classList.toggle('hidden');$('play-en').textContent=current.en};$('answer-audio').onclick=()=>speak(current.en,1);$('play-next').onclick=()=>nextQuestion();$('restart').onclick=()=>initialize();$('clear-home').onclick=()=>show('home');$('clear-study').onclick=()=>show('study');document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelListening();stopAudio()}});
 </script><script type="module" src="./src/piper.js"></script></body></html>
