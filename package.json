@@ -1,0 +1,17 @@
+{
+  "name": "speaking-try-piper",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@mintplex-labs/piper-tts-web": "1.0.5"
+  },
+  "devDependencies": {
+    "vite": "^6.3.0"
+  }
+}
