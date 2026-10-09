@@ -49,6 +49,7 @@ function stopAudio(){
   document.querySelectorAll('.word.active').forEach(el=>el.classList.remove('active'));
 }
 function audioStatus(message){const el=$('audio-status');if(el)el.textContent=message;}
+function wordSpans(sentence){return sentence.split(/\s+/).filter(Boolean).map(word=>'<span class="word">'+escapeHTML(word)+'</span>').join(' ')}
 function highlight(container,index){container.querySelectorAll('.word').forEach((el,i)=>el.classList.toggle('active',i===index));}
 async function speak(text,rate=1,container=null){
   stopAudio();const job=speechJob;
