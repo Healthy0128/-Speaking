@@ -152,9 +152,16 @@ function stopRecording(){
   recordingSession.stopping=true;
   clearInterval(timerHandle);timerHandle=null;
   $('mic-btn').disabled=true;
-  $('mic-state').textContent='録音終了・解析中';
-  $('recognition-status').textContent='録音が終わりました。音声を文字に変換しています…';
-  try{recordingSession.recorder.stop();}catch(err){$('recognition-status').textContent='録音停止エラー：'+err.message;resetRecordControls();}
+  $('mic-state').textContent='録音終了待ち';
+  $('recognition-status').textContent='最後の音声を取りこぼさないよう、あと0.8秒録音しています…';
+  const session=recordingSession;
+  setTimeout(()=>{
+    if(recordingSession!==session)return;
+    $('mic-state').textContent='録音終了・解析中';
+    $('recognition-status').textContent='録音が終わりました。音声を文字に変換しています…';
+    try{if(session.recorder.state==='recording')session.recorder.stop();}
+    catch(err){$('recognition-status').textContent='録音停止エラー：'+err.message;resetRecordControls();}
+  },800);
 }
 async function transcribeRecording(blob,token){
   let decodeContext=null,recognizer=null;
