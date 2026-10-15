@@ -6,7 +6,7 @@
 <section id="study" class="hidden"><div class="bar"><div><span class="eyebrow" style="color:#16798c">STUDY</span><h2>例文確認 <small id="study-unit-title" class="muted"></small></h2></div><button class="btn ghost" data-go="home">← モード選択へ</button></div><div class="callout">まずは英文を見ながら聞いて、声に出して練習しよう。音声は「ふつう」「ゆっくり」の2種類。単語ハイライトも切り替えられるよ。</div><div class="card"><div class="bar"><b id="study-number">01 / 10</b><label class="opt"><input type="checkbox" class="highlight" checked> 読み上げ単語を光らせる</label></div><div class="prompt"><div class="situation" id="study-situation"></div><div class="jp" id="study-jp"></div></div><div class="en" id="study-en"></div><div class="actions"><button class="btn" id="play-normal">▶ ふつう</button><button class="btn secondary" id="play-slow">▶ ゆっくり</button><button class="btn ghost" id="stop-speech">■ 停止</button></div><div id="audio-status" class="muted tiny" role="status" aria-live="polite">Piper音声を使用します。初回は音声モデルをダウンロードします。</div><div class="actions bar"><button class="btn secondary" id="study-prev">← 前の文</button><button class="btn secondary" id="study-next">次の文 →</button></div></div><div class="card"><h2>例文一覧 <span class="muted tiny" id="study-count"></span></h2><p class="muted tiny">今後の英文追加にも対応できるデータ構造です。</p><div id="sentence-list" class="list"></div></div><div class="actions"><button class="btn" data-go="home">覚えたらチャレンジへ →</button></div></section>
 <section id="clear" class="hidden"><div class="clear-sheet"><div class="clear-star">★ CLEAR ★</div><div class="clear-title">スピーキングトライ</div><div class="clear-lead">チャレンジ達成！</div><div class="clear-info"><div><span>クリアしたUnit</span><strong id="clear-unit">Unit 4</strong></div><div><span>クリアした難易度</span><strong id="clear-mode">必須：3問連続正解</strong></div><div><span>クリア日時（日本時間）</span><strong id="clear-date"></strong></div></div><div class="clear-stamp">SPEAKING TRY · COMPLETED</div><p class="clear-hint">この画面をスクリーンショットして先生に提出しよう！</p></div><div class="actions" style="justify-content:center"><button class="btn" id="clear-study">📖 例文を復習</button><button class="btn secondary" id="clear-home">別のチャレンジへ</button></div><p class="smallprint" style="text-align:center">Windows：Win + Shift + S ／ iPhone：サイドボタン + 音量を上げるボタン</p></section>
 <section id="custom" class="hidden"><div class="bar"><h2>カスタム設定</h2><button class="btn ghost" data-go="home">← 戻る</button></div><div class="card"><div class="settings"><label class="field">判定基準<select id="custom-threshold"><option value="80">ノーマル（80%以上）</option><option value="100">マスター（100%一致）</option></select></label><label class="field">クリア条件<select id="custom-goal"><option value="streak">連続正解</option><option value="all">全問正解</option></select></label><label class="field" id="streak-field">必要な連続正解数<input id="custom-streak" type="number" min="1" max="100" value="3"></label><label class="field">回答開始までの制限時間<select id="custom-time"><option value="10">10秒</option><option value="15">15秒</option><option value="20">20秒</option><option value="0">制限なし</option></select></label><label class="field">出題範囲<select id="custom-category"><option value="all">すべての例文</option><option value="indirect">間接疑問文</option><option value="present">現在分詞の後置修飾</option><option value="past">過去分詞の後置修飾</option></select></label></div><div class="actions"><button class="btn" id="custom-start">この設定でスタート →</button></div></div></section>
-<section id="play" class="hidden"><div class="bar"><div><span class="eyebrow" style="color:#177c8a">SPEAKING CHALLENGE</span><h2 id="mode-heading">チャレンジ</h2><span class="muted tiny" id="mode-details"></span></div><button class="btn ghost" data-go="home">終了・モード選択</button></div><div class="card"><div class="bar"><b id="question-num">問題 1</b><b class="checks" id="score-line">正解 0 / 10</b></div><div class="progress"><div id="progress-bar" style="width:0%"></div></div><div class="prompt"><div class="situation" id="play-situation"></div><div class="jp" id="play-jp"></div></div><div class="bar"><div><div class="muted tiny">回答開始までの残り時間</div><div class="counter" id="timer">10</div></div><div style="text-align:right"><div class="muted tiny">音声認識</div><b id="mic-state">待機中</b></div></div><div class="actions"><button class="btn" id="mic-btn">🎤 マイクで答える</button><button class="btn ghost" id="play-next">別の問題へ →</button></div><div id="play-feedback" class="result hidden" aria-live="polite"></div><div class="status" id="recognition-status" style="margin-top:15px">マイクボタンを押して回答してください。ブラウザのマイク許可が必要です。</div></div><div class="card"><h2>クリア状況</h2><div id="achievement" class="muted"></div><div class="actions"><button class="btn secondary" data-go="study">例文を復習する</button><button class="btn ghost" id="restart">最初からやり直す</button></div></div></section>
+<section id="play" class="hidden"><div class="bar"><div><span class="eyebrow" style="color:#177c8a">SPEAKING CHALLENGE</span><h2 id="mode-heading">チャレンジ</h2><span class="muted tiny" id="mode-details"></span></div><button class="btn ghost" data-go="home">終了・モード選択</button></div><div class="card"><div class="bar"><b id="question-num">問題 1</b><b class="checks" id="score-line">正解 0 / 10</b></div><div class="progress"><div id="progress-bar" style="width:0%"></div></div><div class="prompt"><div class="situation" id="play-situation"></div><div class="jp" id="play-jp"></div></div><div class="bar"><div><div class="muted tiny">回答開始までの残り時間</div><div class="counter" id="timer">10</div></div><div style="text-align:right"><div class="muted tiny">音声認識</div><b id="mic-state">待機中</b></div></div><div class="actions"><button class="btn" id="mic-btn">🎤 録音を開始</button><button class="btn ghost" id="play-next">別の問題へ →</button></div><div id="play-feedback" class="result hidden" aria-live="polite"></div><div class="status" id="recognition-status" style="margin-top:15px">マイクボタンを押して回答してください。ブラウザのマイク許可が必要です。</div></div><div class="card"><h2>クリア状況</h2><div id="achievement" class="muted"></div><div class="actions"><button class="btn secondary" data-go="study">例文を復習する</button><button class="btn ghost" id="restart">最初からやり直す</button></div></div></section>
 <footer><span>Speaking Try · <span id="footer-unit">Unit 4</span></span><span>🎧 イヤホンマイク推奨</span></footer></main><script>
 'use strict';
 // 例文を増やす場合はこの配列へ {id,category,context,jp,en} を追加する。
@@ -113,7 +113,7 @@ function renderStudy(){
 function startMode(name){if(name==='custom'){show('custom');return}const opts={required:{label:'必須：3問連続正解',threshold:80,goal:'streak',streak:3,time:10,category:'all'},recommended:{label:'推奨：全問正解',threshold:80,goal:'all',time:10,category:'all'},master:{label:'挑戦：マスター全問正解',threshold:100,goal:'all',time:10,category:'all'}};config=opts[name];initialize();}
 function initialize(){solved=new Set();streak=0;attempts=0;queue=unitSentences().filter(s=>config.category==='all'||config.category===s.category).map(s=>s.id);if(!queue.length)return alert('問題がありません');$('mode-heading').textContent=unit().label+'｜'+config.label;$('mode-details').textContent=`${config.threshold}%判定 · ${config.goal==='streak'?config.streak+'問連続正解':queue.length+'問すべて正解'} · ${config.time?config.time+'秒':'時間制限なし'}`;show('play');nextQuestion(true);}
 function choose(){let eligible=queue.map(id=>SENTENCES.find(s=>s.id===id)).filter(s=>config.goal==='streak'||!solved.has(s.id));if(!eligible.length)return null;let alternatives=eligible.filter(s=>!current||s.id!==current.id);let candidates=alternatives.length?alternatives:eligible;return candidates[Math.floor(Math.random()*candidates.length)];}
-function nextQuestion(first=false){cancelListening();stopAudio();const c=choose();if(!c){complete();return;}current=c;active=false;$('play-situation').textContent=c.context;$('play-jp').textContent=c.jp;$('question-num').textContent=config.goal==='all'?`達成 ${solved.size} / ${queue.length}`:`挑戦 ${attempts+1}`;$('play-feedback').classList.add('hidden');$('mic-btn').disabled=false;$('mic-btn').textContent='🎤 マイクで答える';$('mic-state').textContent='待機中';$('play-next').textContent='別の問題へ →';$('play-next').onclick=()=>nextQuestion();$('recognition-status').textContent='マイクボタンを押すと回答が始まります。';$('timer').textContent=config.time||'∞';refreshProgress();}
+function nextQuestion(first=false){cancelListening();stopAudio();const c=choose();if(!c){complete();return;}current=c;active=false;$('play-situation').textContent=c.context;$('play-jp').textContent=c.jp;$('question-num').textContent=config.goal==='all'?`達成 ${solved.size} / ${queue.length}`:`挑戦 ${attempts+1}`;$('play-feedback').classList.add('hidden');$('mic-btn').disabled=false;$('mic-btn').textContent='🎤 録音を開始';$('mic-state').textContent='待機中';$('play-next').textContent='別の問題へ →';$('play-next').onclick=()=>nextQuestion();$('recognition-status').textContent='マイクボタンを押すと10秒間の録音が始まります。録音後に文字起こしと判定を行います。';$('timer').textContent=config.time||'∞';refreshProgress();}
 function refreshProgress(){const n=config.goal==='streak'?Math.min(streak,config.streak):solved.size,total=config.goal==='streak'?config.streak:queue.length;$('progress-bar').style.width=`${100*n/total}%`;$('score-line').textContent=config.goal==='streak'?`連続 ${streak} / ${config.streak}`:`正解 ${solved.size} / ${total}`;$('achievement').textContent=config.goal==='streak'?`連続正解：${streak}問。間違えると0問からやり直し。`:`正解済み：${solved.size} / ${total}問。正解した問題は再出題されません。`;}
 function complete(){cancelListening();stopAudio();active=false;
  const now=new Date();const fmt=new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
@@ -122,129 +122,125 @@ function complete(){cancelListening();stopAudio();active=false;
  $('clear-date').textContent=fmt.format(now)+' JST';
  show('clear');
 }
-function beginTimer(){clearInterval(timerHandle);if(!config.time){$('timer').textContent='∞';return}remaining=config.time;tickEnd=Date.now()+config.time*1000;$('timer').textContent=remaining;timerHandle=setInterval(()=>{remaining=Math.max(0,Math.ceil((tickEnd-Date.now())/1000));$('timer').textContent=remaining;if(!remaining&&active){finish('',true)}},100);}
+function beginTimer(){clearInterval(timerHandle);if(!config.time){$('timer').textContent='∞';return}remaining=config.time;tickEnd=Date.now()+config.time*1000;$('timer').textContent=remaining;timerHandle=setInterval(()=>{remaining=Math.max(0,Math.ceil((tickEnd-Date.now())/1000));$('timer').textContent=remaining;if(!remaining&&active){stopRecording()}},100);}
 function cancelListening(){if(voskRecording){const rec=voskRecording;voskRecording=null;rec.stop();}active=false;listenToken++;clearInterval(timerHandle);timerHandle=null;if(recognition){const r=recognition;recognition=null;try{r.abort()}catch(e){}}}
 function finish(transcript,timedOut=false){if(!active)return;cancelListening();attempts++;let g=grade(current.en,transcript,config.threshold);let ok=!timedOut&&g.pass;if(ok){streak++;solved.add(current.id)}else streak=0;const over=ok&&(config.goal==='streak'?streak>=config.streak:solved.size===queue.length);$('mic-state').textContent=timedOut?'時間切れ':ok?'正解！':'もう一度！';$('play-feedback').className='result '+(ok?'good':'bad');$('play-feedback').innerHTML=`<b>${timedOut?'⏰ 時間切れ':ok?'✅ 正解！':'🔁 もう一度チャレンジ'}</b><br>認識結果：${escapeHTML(transcript||'（認識できませんでした）')}<br>単語一致率：<b>${timedOut?'—':g.percent+'%'}</b> / 必要：${config.threshold}%`;$('mic-btn').textContent='🎤 同じ問題でもう一度';$('mic-btn').disabled=false;$('recognition-status').textContent=ok?'次の問題に進めます。':'お手本を聞いて練習してから、もう一度答えよう。';refreshProgress();if(over){$('mic-btn').disabled=true;$('play-next').textContent='結果を見る →';$('play-next').onclick=()=>complete();}else{$('play-next').textContent='次の問題へ →';$('play-next').onclick=()=>nextQuestion();}}
 // Web Speech APIが通信エラーになった場合だけ、端末内Voskで音声を認識する。
-let voskLoading=null, voskModel=null, voskRecording=null;
-const VOSK_MODEL_URL='https://huggingface.co/zzzlll/vosk-model-small-en-us-0.15/resolve/main/vosk-model-small-en-us-0.15.tar.gz';
+
+let voskLoading=null, voskModel=null, recordingSession=null, recognitionToken=0;
+const VOSK_MODEL_URL='https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz';
 async function loadVosk(){
- if(voskModel)return voskModel;
- if(!voskLoading)voskLoading=(async()=>{
-   if(!window.Vosk){
-     await new Promise((resolve,reject)=>{
-       const script=document.createElement('script');
-       script.src='https://cdn.jsdelivr.net/npm/vosk-browser@0.0.5/dist/vosk.js';
-       script.onload=resolve;script.onerror=()=>reject(new Error('Voskライブラリを取得できませんでした'));
-       document.head.append(script);
-     });
-   }
-   return await window.Vosk.createModel(VOSK_MODEL_URL);
- })().catch(error=>{voskLoading=null;throw error;});
- voskModel=await voskLoading;return voskModel;
+  if(voskModel)return voskModel;
+  if(!voskLoading)voskLoading=(async()=>{
+    if(!window.Vosk)await new Promise((resolve,reject)=>{
+      const script=document.createElement('script');
+      script.src='https://cdn.jsdelivr.net/npm/vosk-browser@0.0.5/dist/vosk.js';
+      script.onload=resolve;script.onerror=()=>reject(new Error('Voskのライブラリを読み込めませんでした'));
+      document.head.append(script);
+    });
+    const model=await window.Vosk.createModel(VOSK_MODEL_URL);
+    return model;
+  })().catch(e=>{voskLoading=null;throw e;});
+  voskModel=await voskLoading;return voskModel;
 }
-async function voskFallback(){
- const status=$('recognition-status');
- status.textContent='オンライン認識に接続できません。Voskの端末内認識を準備しています（初回約40MB）…';
- $('mic-state').textContent='Vosk準備中';
- $('mic-btn').disabled=true;
- const token=++listenToken;
- let stream,context,node,source,recognizer;
- try{
-   const model=await loadVosk();
-   if(token!==listenToken)return;
-   status.textContent='Vosk準備完了。マイクで発話してください。';
-   recognizer=new model.KaldiRecognizer();
-   let recognized='',partial='';
-   recognizer.on('result',msg=>{if(msg?.result?.text)recognized+=' '+msg.result.text;});
-   recognizer.on('partialresult',msg=>{partial=msg?.result?.partial||'';status.textContent='端末内認識中：'+(recognized+' '+partial).trim();});
-   stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true},video:false});
-   context=new (window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
-   await context.resume();
-   source=context.createMediaStreamSource(stream);
-   node=context.createScriptProcessor(4096,1,1);
-   node.onaudioprocess=e=>{try{recognizer.acceptWaveform(e.inputBuffer)}catch(error){status.textContent='Vosk音声処理エラー：'+error.message;}};
-   source.connect(node);node.connect(context.destination);
-   active=true;
-   $('mic-btn').disabled=false;$('mic-btn').textContent='■ 録音を終了';
-   $('mic-state').textContent='Voskで録音中';beginTimer();
-   let closed=false;
-   voskRecording={stop:async()=>{
-     if(closed)return;closed=true;
-     clearInterval(timerHandle);
-     node.disconnect();source.disconnect();stream.getTracks().forEach(t=>t.stop());
-     await context.close();
-     // Voskは語句を区切った結果を非同期で通知する。
-     await new Promise(resolve=>setTimeout(resolve,450));
-     voskRecording=null;
-     const transcript=(recognized+' '+partial).trim();
-     if(active)finish(transcript);
-   }};
- }catch(error){
-   if(stream)stream.getTracks().forEach(t=>t.stop());
-   if(node)try{node.disconnect()}catch{}
-   if(context)try{await context.close()}catch{}
-   if(token!==listenToken)return;
-   active=false;
-   $('mic-btn').disabled=false;$('mic-btn').textContent='🎤 もう一度試す';
-   $('mic-state').textContent='認識不可';
-   status.textContent='Voskを使えませんでした：'+(error.message||error)+'。モデル配信先への接続・端末メモリを確認してください。';
- }
+function resetRecordControls(){
+  $('mic-btn').disabled=false;
+  $('mic-btn').textContent='🎤 録音を開始';
 }
-function listen(){
- stopAudio();
- if(voskRecording){voskRecording.stop();return;}if(active){cancelListening();$('mic-state').textContent='中断';$('mic-btn').textContent='🎤 マイクで答える';return;}
- const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
- const status=$('recognition-status');
- if(!SR){status.textContent='このブラウザはWeb Speech音声認識APIに対応していません。音声認識対応ブラウザを使用してください。';return;}
- const token=++listenToken;
- let r;
- try{r=new SR();}catch(err){status.textContent='音声認識を初期化できません：'+err.message;return;}
- recognition=r;r.lang='en-US';r.interimResults=true;r.continuous=false;r.maxAlternatives=1;
- let finalText='',provisional='',started=false;
- active=true;
- $('mic-btn').textContent='■ 録音を中止';
- $('mic-state').textContent='準備中…';
- status.textContent='マイクの起動・許可を確認しています…';
- r.onstart=()=>{if(!active||token!==listenToken)return;started=true;$('mic-state').textContent='聞き取り中…';status.textContent='英語を話してください。';beginTimer();};
- r.onresult=e=>{
-   if(!active||token!==listenToken)return;
-   finalText='';provisional='';
-   for(let i=0;i<e.results.length;i++){
-     const result=e.results[i],word=result[0]?.transcript||'';
-     if(result.isFinal)finalText+=word+' ';else provisional+=word+' ';
-   }
-   const heard=(finalText+provisional).trim();
-   status.textContent='認識中：'+(heard||'…');
-   if(finalText.trim())finish(finalText.trim());
- };
- r.onerror=e=>{
-   if(!active||token!==listenToken)return;
-   const code=e.error||'unknown';
-   const hints={
-     'not-allowed':'マイクへのアクセスが拒否されました。サイトの権限と学校の管理設定を確認してください。',
-     'service-not-allowed':'音声認識サービスが利用できません。管理Edgeのポリシーや認識サービスへのアクセスを確認してください。',
-     'network':'音声認識サービスに接続できません。学校のネットワーク・管理ポリシーによる制限の可能性があります。',
-     'audio-capture':'マイクを取得できません。OSの入力デバイスと権限を確認してください。',
-     'no-speech':'英語が検出されませんでした。イヤホンマイクを使い、もう一度試してください。',
-     'language-not-supported':'英語(en-US)の音声認識がサポートされていません。',
-     'aborted':'認識が中断されました。'
-   };
-   cancelListening();if(code==='network'||code==='service-not-allowed'){voskFallback();return;}$('mic-state').textContent='認識エラー';$('mic-btn').textContent='🎤 もう一度試す';
-   status.textContent='エラーコード：'+code+'。'+(hints[code]||'ブラウザの音声認識処理が失敗しました。');
- };
- r.onend=()=>{
-   if(!active||token!==listenToken)return;
-   const answer=(finalText||provisional).trim();
-   if(answer)finish(answer);
-   else{
-     cancelListening();$('mic-state').textContent='聞き取れませんでした';
-     $('mic-btn').textContent='🎤 もう一度';
-     status.textContent='認識が終了しましたが文字が返ってきませんでした。開始イベント：'+(started?'あり':'なし')+'。学校の管理Edgeで制限されている可能性もあります。';
-   }
- };
- try{r.start();}
- catch(err){cancelListening();$('mic-state').textContent='起動失敗';$('mic-btn').textContent='🎤 もう一度試す';status.textContent='マイクを開始できませんでした：'+err.message;}
+function stopRecording(){
+  if(!recordingSession||recordingSession.stopping)return;
+  recordingSession.stopping=true;
+  clearInterval(timerHandle);timerHandle=null;
+  $('mic-btn').disabled=true;
+  $('mic-state').textContent='録音終了・解析中';
+  $('recognition-status').textContent='録音が終わりました。音声を文字に変換しています…';
+  try{recordingSession.recorder.stop();}catch(err){$('recognition-status').textContent='録音停止エラー：'+err.message;resetRecordControls();}
+}
+async function transcribeRecording(blob,token){
+  let decodeContext=null,recognizer=null;
+  const status=$('recognition-status');
+  try{
+    const model=await loadVosk();
+    if(token!==recognitionToken)return;
+    status.textContent='録音を解析しています。';
+    decodeContext=new (window.AudioContext||window.webkitAudioContext)();
+    const bytes=await blob.arrayBuffer();
+    const decoded=await decodeContext.decodeAudioData(bytes);
+    if(token!==recognitionToken)return;
+    const sampleRate=16000;
+    const length=Math.ceil(decoded.duration*sampleRate);
+    const offline=new OfflineAudioContext(1,Math.max(length,1),sampleRate);
+    const source=offline.createBufferSource();source.buffer=decoded;
+    source.connect(offline.destination);source.start();
+    const audio=await offline.startRendering();
+    const samples=audio.getChannelData(0);
+    recognizer=new model.KaldiRecognizer(sampleRate);
+    let parts=[],partial='';
+    recognizer.on('result',message=>{const t=message?.result?.text;if(t)parts.push(t);});
+    recognizer.on('partialresult',message=>{partial=message?.result?.partial||'';});
+    for(let i=0;i<samples.length;i+=4096){
+      if(token!==recognitionToken)return;
+      const segment=samples.subarray(i,Math.min(i+4096,samples.length));
+      const buffer=new AudioBuffer({length:segment.length,numberOfChannels:1,sampleRate});
+      buffer.copyToChannel(segment,0);
+      recognizer.acceptWaveform(buffer);
+      if(i%32768===0){status.textContent='録音を解析中 '+Math.min(100,Math.round(i/samples.length*100))+'%';await new Promise(resolve=>setTimeout(resolve,0));}
+    }
+    // ワーカーからの結果通知を受け取る時間を確保する。
+    await new Promise(resolve=>setTimeout(resolve,800));
+    const transcript=(parts.join(' ')||partial).trim();
+    if(token!==recognitionToken)return;
+    recordingSession=null;
+    if(!transcript){
+      active=false;resetRecordControls();$('mic-state').textContent='認識できませんでした';
+      status.textContent='録音はできましたが、英文を聞き取れませんでした。もう一度録音してください。';
+      return;
+    }
+    finish(transcript);
+  }catch(error){
+    if(token!==recognitionToken)return;
+    active=false;recordingSession=null;resetRecordControls();
+    $('mic-state').textContent='解析エラー';
+    status.textContent='録音・文字起こしエラー：'+(error?.message||String(error))+'。モデルのダウンロードやWASMの利用環境を確認してください。';
+  }finally{if(decodeContext)try{await decodeContext.close()}catch{}}
+}
+async function listen(){
+  stopAudio();
+  if(recordingSession&&!recordingSession.stopping){stopRecording();return;}
+  if(recordingSession)return;
+  const token=++recognitionToken;
+  let stream=null;
+  try{
+    if(!window.MediaRecorder||!navigator.mediaDevices?.getUserMedia)throw new Error('この端末では録音機能を利用できません');
+    $('mic-btn').disabled=true;$('mic-state').textContent='準備中';
+    $('recognition-status').textContent='マイクの利用許可を確認しています…';
+    stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1},video:false});
+    if(token!==recognitionToken){stream.getTracks().forEach(t=>t.stop());return;}
+    const chunks=[];
+    const options=MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?{mimeType:'audio/webm;codecs=opus'}:{};
+    const recorder=new MediaRecorder(stream,options);
+    recordingSession={recorder,stream,stopping:false};
+    recorder.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data);};
+    recorder.onerror=e=>{$('recognition-status').textContent='録音エラー：'+(e.error?.message||'不明なエラー');};
+    recorder.onstop=()=>{
+      stream.getTracks().forEach(t=>t.stop());
+      if(token!==recognitionToken)return;
+      const blob=new Blob(chunks,{type:recorder.mimeType||'audio/webm'});
+      if(!blob.size){recordingSession=null;active=false;resetRecordControls();$('recognition-status').textContent='音声が録音されませんでした。';return;}
+      transcribeRecording(blob,token);
+    };
+    active=true;recorder.start(250);
+    $('mic-btn').disabled=false;$('mic-btn').textContent='■ 録音を終了';
+    $('mic-state').textContent='録音中';
+    $('recognition-status').textContent='英語を話してください。話し終えたら「録音を終了」を押してください。';
+    beginTimer();
+  }catch(error){
+    if(stream)stream.getTracks().forEach(t=>t.stop());
+    if(token!==recognitionToken)return;
+    active=false;recordingSession=null;resetRecordControls();
+    $('mic-state').textContent='録音不可';
+    $('recognition-status').textContent='マイク開始エラー：'+(error?.message||String(error));
+  }
 }
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>startMode(b.dataset.mode));$('study-prev').onclick=()=>{stopAudio();studyIndex=(studyIndex-1+unitSentences().length)%unitSentences().length;renderStudy()};$('study-next').onclick=()=>{stopAudio();studyIndex=(studyIndex+1)%unitSentences().length;renderStudy()};$('play-normal').onclick=()=>speak(unitSentences()[studyIndex].en,1,$('study-en'));$('play-slow').onclick=()=>speak(unitSentences()[studyIndex].en,.7,$('study-en'));$('stop-speech').onclick=stopAudio;document.querySelector('.highlight').onchange=()=>highlight($('study-en'),-1);$('custom-goal').onchange=()=>{$('streak-field').classList.toggle('hidden',$('custom-goal').value!=='streak')};$('custom-start').onclick=()=>{let st=Number($('custom-streak').value);if(!Number.isInteger(st)||st<1||st>100)return alert('連続正解数は1〜100で指定してください');config={label:'カスタムチャレンジ',threshold:Number($('custom-threshold').value),goal:$('custom-goal').value,streak:st,time:Number($('custom-time').value),category:$('custom-category').value};initialize()};$('mic-btn').onclick=listen;$('play-next').onclick=()=>nextQuestion();$('restart').onclick=()=>initialize();$('clear-home').onclick=()=>show('home');$('clear-study').onclick=()=>show('study');document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelListening();stopAudio()}});
 </script><script type="module" src="./src/piper.js"></script></body></html>
