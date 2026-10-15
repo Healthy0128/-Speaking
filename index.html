@@ -168,10 +168,12 @@ async function transcribeRecording(blob,token){
     const decoded=await decodeContext.decodeAudioData(bytes);
     if(token!==recognitionToken)return;
     const sampleRate=16000;
-    const length=Math.ceil(decoded.duration*sampleRate);
+    const leadSilence=Math.round(sampleRate*0.35);
+    const endSilence=Math.round(sampleRate*1.2);
+    const length=Math.ceil(decoded.duration*sampleRate)+leadSilence+endSilence;
     const offline=new OfflineAudioContext(1,Math.max(length,1),sampleRate);
     const source=offline.createBufferSource();source.buffer=decoded;
-    source.connect(offline.destination);source.start();
+    source.connect(offline.destination);source.start(leadSilence/sampleRate);
     const audio=await offline.startRendering();
     const samples=audio.getChannelData(0);
     recognizer=new model.KaldiRecognizer(sampleRate);
@@ -187,7 +189,7 @@ async function transcribeRecording(blob,token){
       if(i%32768===0){status.textContent='録音を解析中 '+Math.min(100,Math.round(i/samples.length*100))+'%';await new Promise(resolve=>setTimeout(resolve,0));}
     }
     // ワーカーからの結果通知を受け取る時間を確保する。
-    await new Promise(resolve=>setTimeout(resolve,800));
+    await new Promise(resolve=>setTimeout(resolve,1700));
     const transcript=(parts.join(' ')||partial).trim();
     if(token!==recognitionToken)return;
     recordingSession=null;
@@ -233,6 +235,13 @@ async function listen(){
     $('mic-btn').disabled=false;$('mic-btn').textContent='■ 録音を終了';
     $('mic-state').textContent='録音中';
     $('recognition-status').textContent='英語を話してください。話し終えたら「録音を終了」を押してください。';
+    // 録音開始直後の準備時間を確保してから発話を促す。
+    $('mic-state').textContent='録音準備中';
+    $('recognition-status').textContent='録音の準備中です。画面が「話してください」に変わったら発話してください。';
+    await new Promise(resolve=>setTimeout(resolve,650));
+    if(token!==recognitionToken||!recordingSession)return;
+    $('mic-state').textContent='録音中';
+    $('recognition-status').textContent='話してください。終わったら「録音を終了」を押してください。';
     beginTimer();
   }catch(error){
     if(stream)stream.getTracks().forEach(t=>t.stop());
