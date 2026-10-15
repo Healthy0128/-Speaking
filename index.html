@@ -123,11 +123,77 @@ function complete(){cancelListening();stopAudio();active=false;
  show('clear');
 }
 function beginTimer(){clearInterval(timerHandle);if(!config.time){$('timer').textContent='∞';return}remaining=config.time;tickEnd=Date.now()+config.time*1000;$('timer').textContent=remaining;timerHandle=setInterval(()=>{remaining=Math.max(0,Math.ceil((tickEnd-Date.now())/1000));$('timer').textContent=remaining;if(!remaining&&active){finish('',true)}},100);}
-function cancelListening(){active=false;listenToken++;clearInterval(timerHandle);timerHandle=null;if(recognition){const r=recognition;recognition=null;try{r.abort()}catch(e){}}}
+function cancelListening(){if(voskRecording){const rec=voskRecording;voskRecording=null;rec.stop();}active=false;listenToken++;clearInterval(timerHandle);timerHandle=null;if(recognition){const r=recognition;recognition=null;try{r.abort()}catch(e){}}}
 function finish(transcript,timedOut=false){if(!active)return;cancelListening();attempts++;let g=grade(current.en,transcript,config.threshold);let ok=!timedOut&&g.pass;if(ok){streak++;solved.add(current.id)}else streak=0;const over=ok&&(config.goal==='streak'?streak>=config.streak:solved.size===queue.length);$('mic-state').textContent=timedOut?'時間切れ':ok?'正解！':'もう一度！';$('play-feedback').className='result '+(ok?'good':'bad');$('play-feedback').innerHTML=`<b>${timedOut?'⏰ 時間切れ':ok?'✅ 正解！':'🔁 もう一度チャレンジ'}</b><br>認識結果：${escapeHTML(transcript||'（認識できませんでした）')}<br>単語一致率：<b>${timedOut?'—':g.percent+'%'}</b> / 必要：${config.threshold}%`;$('mic-btn').textContent='🎤 同じ問題でもう一度';$('mic-btn').disabled=false;$('recognition-status').textContent=ok?'次の問題に進めます。':'お手本を聞いて練習してから、もう一度答えよう。';refreshProgress();if(over){$('mic-btn').disabled=true;$('play-next').textContent='結果を見る →';$('play-next').onclick=()=>complete();}else{$('play-next').textContent='次の問題へ →';$('play-next').onclick=()=>nextQuestion();}}
+// Web Speech APIが通信エラーになった場合だけ、端末内Voskで音声を認識する。
+let voskLoading=null, voskModel=null, voskRecording=null;
+const VOSK_MODEL_URL='https://huggingface.co/zzzlll/vosk-model-small-en-us-0.15/resolve/main/vosk-model-small-en-us-0.15.tar.gz';
+async function loadVosk(){
+ if(voskModel)return voskModel;
+ if(!voskLoading)voskLoading=(async()=>{
+   if(!window.Vosk){
+     await new Promise((resolve,reject)=>{
+       const script=document.createElement('script');
+       script.src='https://cdn.jsdelivr.net/npm/vosk-browser@0.0.5/dist/vosk.js';
+       script.onload=resolve;script.onerror=()=>reject(new Error('Voskライブラリを取得できませんでした'));
+       document.head.append(script);
+     });
+   }
+   return await window.Vosk.createModel(VOSK_MODEL_URL);
+ })().catch(error=>{voskLoading=null;throw error;});
+ voskModel=await voskLoading;return voskModel;
+}
+async function voskFallback(){
+ const status=$('recognition-status');
+ status.textContent='オンライン認識に接続できません。Voskの端末内認識を準備しています（初回約40MB）…';
+ $('mic-state').textContent='Vosk準備中';
+ $('mic-btn').disabled=true;
+ const token=++listenToken;
+ let stream,context,node,source,recognizer;
+ try{
+   const model=await loadVosk();
+   if(token!==listenToken)return;
+   status.textContent='Vosk準備完了。マイクで発話してください。';
+   recognizer=new model.KaldiRecognizer();
+   let recognized='',partial='';
+   recognizer.on('result',msg=>{if(msg?.result?.text)recognized+=' '+msg.result.text;});
+   recognizer.on('partialresult',msg=>{partial=msg?.result?.partial||'';status.textContent='端末内認識中：'+(recognized+' '+partial).trim();});
+   stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true},video:false});
+   context=new (window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
+   await context.resume();
+   source=context.createMediaStreamSource(stream);
+   node=context.createScriptProcessor(4096,1,1);
+   node.onaudioprocess=e=>{try{recognizer.acceptWaveform(e.inputBuffer)}catch(error){status.textContent='Vosk音声処理エラー：'+error.message;}};
+   source.connect(node);node.connect(context.destination);
+   active=true;
+   $('mic-btn').disabled=false;$('mic-btn').textContent='■ 録音を終了';
+   $('mic-state').textContent='Voskで録音中';beginTimer();
+   let closed=false;
+   voskRecording={stop:async()=>{
+     if(closed)return;closed=true;
+     clearInterval(timerHandle);
+     node.disconnect();source.disconnect();stream.getTracks().forEach(t=>t.stop());
+     await context.close();
+     // Voskは語句を区切った結果を非同期で通知する。
+     await new Promise(resolve=>setTimeout(resolve,450));
+     voskRecording=null;
+     const transcript=(recognized+' '+partial).trim();
+     if(active)finish(transcript);
+   }};
+ }catch(error){
+   if(stream)stream.getTracks().forEach(t=>t.stop());
+   if(node)try{node.disconnect()}catch{}
+   if(context)try{await context.close()}catch{}
+   if(token!==listenToken)return;
+   active=false;
+   $('mic-btn').disabled=false;$('mic-btn').textContent='🎤 もう一度試す';
+   $('mic-state').textContent='認識不可';
+   status.textContent='Voskを使えませんでした：'+(error.message||error)+'。モデル配信先への接続・端末メモリを確認してください。';
+ }
+}
 function listen(){
  stopAudio();
- if(active){cancelListening();$('mic-state').textContent='中断';$('mic-btn').textContent='🎤 マイクで答える';return;}
+ if(voskRecording){voskRecording.stop();return;}if(active){cancelListening();$('mic-state').textContent='中断';$('mic-btn').textContent='🎤 マイクで答える';return;}
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
  const status=$('recognition-status');
  if(!SR){status.textContent='このブラウザはWeb Speech音声認識APIに対応していません。音声認識対応ブラウザを使用してください。';return;}
@@ -164,7 +230,7 @@ function listen(){
      'language-not-supported':'英語(en-US)の音声認識がサポートされていません。',
      'aborted':'認識が中断されました。'
    };
-   cancelListening();$('mic-state').textContent='認識エラー';$('mic-btn').textContent='🎤 もう一度試す';
+   cancelListening();if(code==='network'||code==='service-not-allowed'){voskFallback();return;}$('mic-state').textContent='認識エラー';$('mic-btn').textContent='🎤 もう一度試す';
    status.textContent='エラーコード：'+code+'。'+(hints[code]||'ブラウザの音声認識処理が失敗しました。');
  };
  r.onend=()=>{
