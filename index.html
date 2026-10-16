@@ -135,7 +135,9 @@ async function prepareCachedVoskModel(){
   const status=$('boot-status');
   try{
     const registration=await navigator.serviceWorker.register('./sw.js',{scope:'./'});
-    const worker=registration.active||registration.waiting||registration.installing;
+    // Wait for activation so the initial visit can also use the cached file.
+    const readyRegistration=await navigator.serviceWorker.ready;
+    const worker=readyRegistration.active;
     if(!worker)return;
     // The Service Worker can complete this download even if the tab is not visible,
     // unless the browser or operating system suspends background activity.
