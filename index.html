@@ -130,6 +130,33 @@ function finish(transcript,timedOut=false){if(!active)return;cancelListening();a
 
 let voskLoading=null, voskModel=null, recordingSession=null, recognitionToken=0;
 const VOSK_MODEL_URL='./models/vosk-model-en-us-0.22-lgraph.tar.gz';
+async function prepareCachedVoskModel(){
+  if(!('serviceWorker' in navigator)||!('caches' in window))return;
+  const status=$('boot-status');
+  try{
+    const registration=await navigator.serviceWorker.register('./sw.js',{scope:'./'});
+    const worker=registration.active||registration.waiting||registration.installing;
+    if(!worker)return;
+    // The Service Worker can complete this download even if the tab is not visible,
+    // unless the browser or operating system suspends background activity.
+    await new Promise((resolve,reject)=>{
+      const channel=new MessageChannel();
+      channel.port1.onmessage=e=>{
+        const {state,error}=e.data||{};
+        if(state==='downloading'&&status)status.textContent='高精度モデル（約128MB）をダウンロードしています。タブを切り替えても続行を試みます…';
+        if(state==='cached'){channel.port1.close();resolve();}
+        if(state==='error'){channel.port1.close();reject(new Error(error||'モデルを保存できませんでした'));}
+      };
+      worker.postMessage({type:'CACHE_VOSK_MODEL'},[channel.port2]);
+    });
+    if(status)status.textContent='モデルを保存しました。音声認識AIを初期化しています…';
+  }catch(error){
+    // Cache Storage can be unavailable on restrictive managed devices.
+    // In that case Vosk still tries its normal direct download.
+    console.warn('Model background cache unavailable',error);
+    if(status)status.textContent='モデルの事前保存が利用できません。通常の方法で読み込んでいます…';
+  }
+}
 async function loadVosk(){
   if(voskModel)return voskModel;
   if(!voskLoading)voskLoading=(async()=>{
@@ -141,7 +168,8 @@ async function loadVosk(){
       script.onload=resolve;script.onerror=()=>reject(new Error('Voskのライブラリを読み込めませんでした'));
       document.head.append(script);
     });
-    if(bootStatus)bootStatus.textContent='高精度モデル（約128MB）をダウンロード・展開しています。初回は数分かかることがあります…';
+    await prepareCachedVoskModel();
+    if(bootStatus)bootStatus.textContent='高精度モデルを展開・初期化しています。この処理は端末の性能によって時間がかかります…';
     const model=await window.Vosk.createModel(VOSK_MODEL_URL);
     if(bootStatus)bootStatus.textContent='音声認識エンジンの準備が完了しました。';
     return model;
