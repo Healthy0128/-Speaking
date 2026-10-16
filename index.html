@@ -216,8 +216,27 @@ async function loadVosk(){
     updateDiagnostics();
     const diagnosticTimer=setInterval(updateDiagnostics,1000);
     let model;
-    try{model=await window.Vosk.createModel(VOSK_MODEL_URL);}
-    finally{clearInterval(diagnosticTimer);}
+    try{
+      // vosk-browser 0.0.5 createModel() ignores worker "error" events.
+      // Register both events and enforce a timeout instead of waiting forever.
+      model=await new Promise((resolve,reject)=>{
+        const candidate=new window.Vosk.Model(VOSK_MODEL_URL);
+        let settled=false;
+        const fail=error=>{
+          if(settled)return;
+          settled=true;clearTimeout(limit);
+          try{candidate.terminate();}catch{}
+          reject(new Error(String(error||'モデル初期化エラー')));
+        };
+        const limit=setTimeout(()=>fail('モデル初期化が120秒を超えました。端末のメモリ不足か、モデル非対応の可能性があります。'),120000);
+        candidate.on('error',message=>fail(message?.error||'音声認識Workerでエラーが発生しました'));
+        candidate.on('load',message=>{
+          if(settled)return;
+          if(message?.result){settled=true;clearTimeout(limit);resolve(candidate);}
+          else fail('Voskモデルの読み込みが失敗しました');
+        });
+      });
+    }finally{clearInterval(diagnosticTimer);}
     $('boot-diagnostics').textContent='モデル初期化完了';
     if(bootStatus)bootStatus.textContent='音声認識エンジンの準備が完了しました。';
     return model;
