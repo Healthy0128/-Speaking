@@ -1,37 +1,18 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>スピーキングトライ | 音声認識比較</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>スピーキングトライ | 音声認識比較</title>
 <style>
-:root{font-family:system-ui,"Segoe UI",sans-serif;color:#142840;background:#eef3f8}*{box-sizing:border-box}
-body{margin:0}.wrap{max-width:720px;margin:35px auto;padding:0 18px}.panel{background:white;border-radius:20px;padding:25px;box-shadow:0 8px 32px #15384b12}
-h1{font-size:25px;margin:0 0 8px}p{line-height:1.7}.muted{color:#567086;font-size:13px}
-button,select{font:inherit;border:0;border-radius:12px;padding:13px 18px}button{background:#167b92;color:white;font-weight:700;cursor:pointer;margin:5px 5px 5px 0}button:disabled{opacity:.45;cursor:not-allowed}
-select{border:1px solid #c9d7df;background:white;width:100%}.question{background:#edf6f8;padding:15px;border-radius:12px;margin:15px 0}
-.bar{height:12px;background:#dce9ee;border-radius:9px;overflow:hidden}.fill{height:100%;width:0;background:#1589a3;transition:width .3s}
-.status{padding:12px;background:#f4f7fa;border-radius:10px;min-height:50px;white-space:pre-wrap}
-.result{font-size:19px;font-weight:650;overflow-wrap:anywhere}.good{color:#087b54}.bad{color:#a24a24}
-a{color:#126b87}small{font-size:12px}
-</style></head><body><main class="wrap"><section class="panel">
-<h1>🎙 音声認識 比較テスト</h1>
-<p class="muted">同じ録音で複数の音声認識を比較します。音声は端末内で処理します。モデルやプログラムの取得にはインターネット接続が必要です。</p>
-<p><a href="./">← 従来のスピーキングトライへ戻る</a></p>
-<label for="sentence">試す英文</label>
-<select id="sentence">
-<option>Do you know where your family is?</option>
-<option>Can you tell me where the restroom is?</option>
-<option>I want to get some water.</option>
-<option>Is there anything I can do for you?</option>
-<option>Could you tell me what happened?</option>
-</select>
-<div class="question"><b>読み上げる英文：</b><p id="prompt">Do you know where your family is?</p></div>
-<label for="engine">音声認識の種類</label><select id="engine"><option value="tiny">Whisper tiny.en（軽量）</option><option value="base">Whisper base.en（大きめ）</option><option value="vosk">Vosk small（軽量）</option></select><p class="muted">選択したモデルだけを読み込みます。初回の通信量・起動時間はモデルによって異なります。切替時は前のモデルを解放します。</p>
-<div><button id="load">① 選んだモデルを読み込む</button><button id="record" disabled>② 録音を開始</button><button id="stop" disabled>■ 録音を終了</button></div>
-<p id="status" class="status" aria-live="polite">認識方式を選び「モデルを読み込む」を押してください。</p>
-<div class="bar"><div class="fill" id="fill"></div></div><p class="muted" id="progress">待機中</p>
-<h3>録音の確認</h3><label for="meter">入力音量</label><progress id="meter" max="1" value="0" style="width:100%"></progress><p id="diagnostics" class="muted">録音すると音量や長さを表示します。</p><audio id="playback" controls style="width:100%"></audio><p class="muted">録音はこの端末内で再生・処理されます。音声ファイルを選んで試すこともできます。</p><input type="file" id="file" accept="audio/*"><button id="testfile" disabled>選択した音声を解析</button>
-<button id="rerun" disabled>同じ録音をこのモデルでもう一度解析</button><h3>比較結果</h3><div id="history"></div><h3>認識結果</h3><p id="result" class="result">—</p><p id="score" class="muted">一致率：—</p>
-<p class="muted">※ モデルのダウンロードは初回のみの想定です。学校端末のキャッシュ設定によっては再取得されます。文字起こしには数秒〜数十秒以上かかる場合があります。採点は単語単位の一致率を使った試験用の目安です。</p>
-</section></main>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#172f42;background:#f2f7f7;font-synthesis:none}*{box-sizing:border-box}body{margin:0}button,select,input{font:inherit}button,select{min-height:48px}button{border:0;cursor:pointer;border-radius:12px;font-weight:750;transition:filter .15s,transform .15s}button:hover:not(:disabled){filter:brightness(.94)}button:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #d18c23;outline-offset:3px}button:disabled{opacity:.46;cursor:not-allowed}.wrap{max-width:1000px;margin:auto;padding:28px 20px 60px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-weight:850;letter-spacing:.04em;color:#287168;font-size:13px}.back{color:#456879;font-size:14px;text-decoration:none}.intro{margin:24px 0 25px}.intro h1{font-size:clamp(25px,4vw,36px);line-height:1.3;letter-spacing:-.03em;margin:8px 0}.intro p{color:#59717b;line-height:1.7;margin:0}.steps{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 0}.steps span{background:#e2efeb;color:#315c55;border-radius:99px;padding:7px 12px;font-size:13px;font-weight:700}.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.85fr);gap:18px;align-items:start}.column{display:grid;gap:18px}.card{background:white;border:1px solid #dce9e5;border-radius:20px;padding:23px;box-shadow:0 7px 24px #315c5510}.section-head{display:flex;align-items:flex-start;gap:11px;margin-bottom:16px}.number{flex:0 0 30px;height:30px;border-radius:10px;display:grid;place-items:center;background:#dff3ec;color:#146b59;font-size:14px;font-weight:800}.section-head h2{font-size:18px;margin:2px 0 3px}.section-head p{font-size:13px;color:#637d83;margin:0;line-height:1.55}.label{font-size:13px;font-weight:750;display:block;margin:14px 0 7px;color:#48636d}select{width:100%;padding:11px 38px 11px 13px;border:1px solid #c4d9d4;border-radius:11px;color:#173947;background:white}.question{background:#ecf7f2;border-radius:15px;padding:16px 18px;margin:15px 0}.question small{font-size:12px;color:#52746b}.question p{font-size:clamp(20px,3vw,26px);line-height:1.45;font-weight:750;margin:7px 0 0;color:#16483e;overflow-wrap:anywhere}.muted{color:#5d767e;font-size:13px;line-height:1.65}.actions{display:flex;gap:9px;flex-wrap:wrap}.actions button{flex:1 1 155px;padding:13px 15px}.primary{background:#187f69;color:white}.secondary{background:#e5f2ee;color:#205a4e}.stop{background:#aa454e;color:white}.status{padding:12px 14px;background:#f3f7f6;border-radius:11px;margin:14px 0 8px;min-height:44px;font-size:14px;line-height:1.5;white-space:pre-wrap}.bar{height:6px;background:#e6efec;border-radius:99px;overflow:hidden}.fill{height:100%;width:0;background:#2ca886;transition:width .3s}.progress-text{margin:5px 0 0;font-size:12px;color:#718780}.mic-panel{background:#f6faf8;border:1px solid #e1eeea;border-radius:15px;padding:16px}.meter-head{display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#496860;margin-bottom:8px}progress{width:100%;height:14px;accent-color:#22a17d}.meter-help{margin:5px 0 14px}.rec-actions{display:flex;gap:10px}.rec-actions button{flex:1;padding:15px 12px;font-size:16px}.result-card{border-top:5px solid #43ab8c}.result-label{font-size:12px;font-weight:750;color:#668077;margin:0 0 8px}.result{font-size:clamp(19px,2.5vw,24px);font-weight:750;line-height:1.5;overflow-wrap:anywhere;margin:0}.score{margin:10px 0 0;font-size:14px}.good{color:#087b54}.bad{color:#a24a24}.compare{margin-top:22px;padding-top:18px;border-top:1px solid #e4eeeb}.compare h3{font-size:15px;margin:0 0 7px}.compare .hint{margin:0 0 12px}.history:empty:before{content:'まだ結果はありません。まずは声を録音してみよう。';font-size:13px;color:#79908a}.history p{padding:12px;background:#f5f9f7;border-radius:10px;line-height:1.55;font-size:13px;overflow-wrap:anywhere}.rerun{width:100%;padding:12px;margin-top:8px}.note{font-size:12px;line-height:1.7;color:#718780;margin:16px 0 0}details{border-top:1px solid #e4eeeb;margin-top:18px;padding-top:15px}summary{cursor:pointer;color:#326d60;font-weight:700;font-size:14px}audio{width:100%;margin-top:12px}input[type=file]{max-width:100%;font-size:13px}.upload{padding:11px 14px;margin-top:9px}a{color:#216f65}@media(max-width:700px){.wrap{padding:20px 14px 40px}.layout{grid-template-columns:1fr}.card{padding:19px}.intro{margin:20px 0}.result-card{grid-row:auto}.steps span{font-size:12px}.rec-actions button{font-size:15px}}@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body><main class="wrap">
+<header class="top"><span class="brand">SPEAKING TRY / 音声認識テスト</span><a class="back" href="./">← 本体へ戻る</a></header>
+<div class="intro"><h1>声をとって、比べてみよう。</h1><p>同じ声をいろいろな音声認識で試せるよ。まずは英文と認識の種類を選ぼう。</p><div class="steps" aria-label="使い方"><span>1 準備する</span><span>2 声を録音</span><span>3 結果を見る</span></div></div>
+<div class="layout"><div class="column">
+<section class="card"><div class="section-head"><span class="number">1</span><div><h2>準備する</h2><p>英文と、声を聞き取るAIを選ぼう。</p></div></div>
+<label class="label" for="sentence">試す英文</label><select id="sentence"><option>Do you know where your family is?</option><option>Can you tell me where the restroom is?</option><option>I want to get some water.</option><option>Is there anything I can do for you?</option><option>Could you tell me what happened?</option></select>
+<div class="question"><small>この英文を読もう</small><p id="prompt">Do you know where your family is?</p></div>
+<label class="label" for="engine">音声認識の種類</label><select id="engine"><option value="tiny">Whisper tiny.en（軽量）</option><option value="base">Whisper base.en（大きめ）</option><option value="vosk">Vosk small（軽量）</option></select>
+<p class="muted">選んだものだけを読み込みます。初めてのときは時間がかかることがあります。</p><div class="actions"><button class="primary" id="load">選んだAIを準備する</button></div><p id="status" class="status" role="status" aria-live="polite">AIを選び「選んだAIを準備する」を押してください。</p><div class="bar" aria-hidden="true"><div class="fill" id="fill"></div></div><p class="progress-text" id="progress">準備待ち</p></section>
+<section class="card"><div class="section-head"><span class="number">2</span><div><h2>声を録音する</h2><p>準備ができたら、英文を話そう。</p></div></div><div class="mic-panel"><div class="meter-head"><label for="meter">マイクの音量</label><span>声に合わせて動くよ</span></div><progress id="meter" max="1" value="0"></progress><p class="muted meter-help">動かないときは、マイクの設定や距離を確認しよう。</p><div class="rec-actions"><button class="primary" id="record" disabled>🎤 録音スタート</button><button class="stop" id="stop" disabled>■ 録音を終える</button></div></div><details><summary>録音の再生・詳しい確認</summary><audio id="playback" controls></audio><p id="diagnostics" class="muted">録音すると、音量や時間が表示されます。</p><p class="muted">音声ファイルを使って試すこともできます。</p><input type="file" id="file" accept="audio/*" aria-label="音声ファイルを選ぶ"><br><button class="secondary upload" id="testfile" disabled>選んだ音声を試す</button></details></section></div>
+<div class="column"><section class="card result-card" aria-live="polite"><div class="section-head"><span class="number">3</span><div><h2>結果を見てみよう</h2><p>聞き取れた言葉を確認しよう。</p></div></div><p class="result-label">聞き取れた英文</p><p id="result" class="result">ここに表示されます</p><p id="score" class="muted score">一致率：—</p><div class="compare"><h3>別のAIでも試す</h3><p class="muted hint">左の「音声認識の種類」を変えて準備したら、同じ録音で比べられるよ。</p><button class="secondary rerun" id="rerun" disabled>同じ録音で試す</button><div id="history" class="history"></div></div><p class="note">録音はこの端末で処理します。AIの準備にはインターネットが必要です。認識結果は発音そのものの評価ではありません。</p></section></div></div></main>
 <script type="module">
 const $=id=>document.getElementById(id);
 let transcriber=null,voskModel=null,activeEngine=null,recorder=null,stream=null,chunks=[],loading=false, meterContext=null, meterTimer=null, playbackURL=null, busy=false,lastBlob=null;
@@ -79,6 +60,7 @@ $('load').onclick=async()=>{
 };
 $('record').onclick=async()=>{
  if((!transcriber&&!voskModel)||recorder||busy)return;
+ $('engine').disabled=true;$('sentence').disabled=true;$('load').disabled=true;$('testfile').disabled=true;$('rerun').disabled=true;
  try{
   stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1}});
   chunks=[];
@@ -98,11 +80,11 @@ $('record').onclick=async()=>{
   recorder.start();
   $('record').disabled=true;$('stop').disabled=false;
   status('録音中です。英文を話して「録音を終了」を押してください。');
- }catch(e){clearInterval(meterTimer);if(meterContext){await meterContext.close();meterContext=null} status('マイクエラー：'+(e?.message||String(e)));stream?.getTracks().forEach(t=>t.stop());stream=null;recorder=null; $('record').disabled=false;} 
+ }catch(e){clearInterval(meterTimer);if(meterContext){await meterContext.close();meterContext=null} status('マイクエラー：'+(e?.message||String(e)));stream?.getTracks().forEach(t=>t.stop());stream=null;recorder=null; $('engine').disabled=false;$('sentence').disabled=false;$('load').disabled=false;$('testfile').disabled=false;$('rerun').disabled=!lastBlob;$('record').disabled=false;} 
 };
 function db(x){return x>0?(20*Math.log10(x)).toFixed(1)+' dBFS':'−∞ dBFS'}
 async function processAudio(blob){
- if(busy||(!transcriber&&!voskModel))return; busy=true; $('engine').disabled=true; $('load').disabled=true; $('rerun').disabled=true; $('record').disabled=true; $('testfile').disabled=true; $('result').textContent='—'; $('score').textContent='一致率：—';
+ if(busy||(!transcriber&&!voskModel))return; busy=true; $('sentence').disabled=true; $('engine').disabled=true; $('load').disabled=true; $('rerun').disabled=true; $('record').disabled=true; $('testfile').disabled=true; $('result').textContent='—'; $('score').textContent='一致率：—';
  try{
   if(!blob.size)throw new Error('録音データが空です。マイク設定を確認してください。');
   if(playbackURL)URL.revokeObjectURL(playbackURL); playbackURL=URL.createObjectURL(blob); $('playback').src=playbackURL;
@@ -129,9 +111,9 @@ async function processAudio(blob){
   else {const output=await transcriber(samples,{language:'english',task:'transcribe',chunk_length_s:30});text=(output?.text||'').trim();} $('result').textContent=text||'（認識できませんでした）';
   if(text){const pct=score($('sentence').value,text);$('score').textContent='単語一致率：約'+pct+'% · 処理時間 '+((performance.now()-t0)/1000).toFixed(1)+'秒';$('score').className=pct>=80?'good':'bad'}
   else $('score').textContent='採点できませんでした · 処理時間 '+((performance.now()-t0)/1000).toFixed(1)+'秒';
-  const row=document.createElement('p');row.textContent=labels[activeEngine]+'（'+$('sentence').value+'）：'+(text||'（空）')+' / '+(text?score($('sentence').value,text)+'%':'採点なし')+' / '+((performance.now()-t0)/1000).toFixed(1)+'秒';$('history').prepend(row);
+  const row=document.createElement('p');row.textContent=labels[activeEngine]+'（'+$('sentence').value+'）：'+(text||'（空）')+' / '+(text?score($('sentence').value,text)+'%':'採点なし')+' / '+((performance.now()-t0)/1000).toFixed(1)+'秒';$('history').prepend(row);$('result').closest('.result-card').scrollIntoView({behavior:'smooth',block:'nearest'});
   status(text?'文字起こしが完了しました。':'文字起こしが空でした。録音の再生と音量を確認してください。');
- }catch(e){status('録音解析エラー：'+(e?.message||String(e)))}finally{busy=false;$('engine').disabled=false;$('load').disabled=false;$('record').disabled=false;$('testfile').disabled=false;$('rerun').disabled=!lastBlob}
+ }catch(e){status('録音解析エラー：'+(e?.message||String(e)))}finally{busy=false;$('sentence').disabled=false;$('engine').disabled=false;$('load').disabled=false;$('record').disabled=false;$('testfile').disabled=false;$('rerun').disabled=!lastBlob}
 }
 async function runVosk(samples){
  const recognizer=new voskModel.KaldiRecognizer(16000);const parts=[];let partial='';
