@@ -27,12 +27,13 @@ a{color:#126b87}small{font-size:12px}
 <div><button id="load">① Whisperを読み込む</button><button id="record" disabled>② 録音を開始</button><button id="stop" disabled>■ 録音を終了</button></div>
 <p id="status" class="status" aria-live="polite">最初に「Whisperを読み込む」を押してください。初回は約75MBのモデルを取得します。</p>
 <div class="bar"><div class="fill" id="fill"></div></div><p class="muted" id="progress">待機中</p>
+<h3>録音の確認</h3><label for="meter">入力音量</label><progress id="meter" max="1" value="0" style="width:100%"></progress><p id="diagnostics" class="muted">録音すると音量や長さを表示します。</p><audio id="playback" controls style="width:100%"></audio><p class="muted">録音はこの端末内で再生・処理されます。音声ファイルを選んで試すこともできます。</p><input type="file" id="file" accept="audio/*"><button id="testfile" disabled>選択した音声を解析</button>
 <h3>認識結果</h3><p id="result" class="result">—</p><p id="score" class="muted">一致率：—</p>
 <p class="muted">※ モデルのダウンロードは初回のみの想定です。学校端末のキャッシュ設定によっては再取得されます。文字起こしには数秒〜数十秒以上かかる場合があります。採点は単語単位の一致率を使った試験用の目安です。</p>
 </section></main>
 <script type="module">
 const $=id=>document.getElementById(id);
-let transcriber=null,recorder=null,stream=null,chunks=[],loading=false;
+let transcriber=null,recorder=null,stream=null,chunks=[],loading=false, meterContext=null, meterTimer=null, playbackURL=null, busy=false;
 const status=text=>$('status').textContent=text;
 $('sentence').onchange=()=>$('prompt').textContent=$('sentence').value;
 function words(s){return s.toLowerCase().replace(/[^a-z\s']/g,' ').trim().split(/\s+/).filter(Boolean)}
@@ -64,7 +65,7 @@ $('load').onclick=async()=>{
   });
   $('fill').style.width='100%';$('progress').textContent='モデル準備完了';
   status('Whisperの準備ができました。録音できます。');
-  $('record').disabled=false;
+  $('record').disabled=false; $('testfile').disabled=false;
  }catch(e){
   status('Whisper起動エラー：'+(e?.message||String(e))+'\nネット接続・端末メモリ・管理ポリシーを確認してください。');
   $('load').disabled=false;
@@ -77,37 +78,54 @@ $('record').onclick=async()=>{
   chunks=[];
   recorder=new MediaRecorder(stream,MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?{mimeType:'audio/webm;codecs=opus'}:{});
   recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+  meterContext=new AudioContext();
+  const analyser=meterContext.createAnalyser(); analyser.fftSize=2048;
+  meterContext.createMediaStreamSource(stream).connect(analyser);
+  const data=new Float32Array(analyser.fftSize);
+  meterTimer=setInterval(()=>{analyser.getFloatTimeDomainData(data);let sum=0;for(const x of data)sum+=x*x; $('meter').value=Math.min(1,Math.sqrt(sum/data.length)*8)},100);
   recorder.onstop=async()=>{
+   clearInterval(meterTimer); $('meter').value=0; if(meterContext){await meterContext.close();meterContext=null}
    stream?.getTracks().forEach(t=>t.stop());stream=null;
-   const blob=new Blob(chunks,{type:recorder.mimeType});
-   recorder=null;
-   if(!blob.size){status('録音データが空でした。');$('record').disabled=false;return}
-   try{
-    status('録音を解析し、Whisperで文字起こししています…');
-    const bytes=await blob.arrayBuffer();
-    const ctx=new AudioContext();
-    let audio;
-    try{audio=await ctx.decodeAudioData(bytes)}finally{await ctx.close()}
-    const offline=new OfflineAudioContext(1,Math.ceil(audio.duration*16000),16000);
-    const source=offline.createBufferSource();source.buffer=audio;source.connect(offline.destination);source.start();
-    const resampled=await offline.startRendering();
-    const samples=resampled.getChannelData(0);
-    const t0=performance.now();
-    const output=await transcriber(samples,{language:'english',task:'transcribe',chunk_length_s:30});
-    const text=(output?.text||'').trim();
-    $('result').textContent=text||'（認識できませんでした）';
-    const pct=score($('sentence').value,text);
-    $('score').textContent='単語一致率：約'+pct+'% · 処理時間 '+((performance.now()-t0)/1000).toFixed(1)+'秒';
-    $('score').className=pct>=80?'good':'bad';
-    status('文字起こしが完了しました。');
-   }catch(e){status('録音解析エラー：'+(e?.message||String(e)));}
-   finally{$('record').disabled=false}
+   const blob=new Blob(chunks,{type:recorder.mimeType}); recorder=null;
+   await processAudio(blob);
   };
   recorder.start();
   $('record').disabled=true;$('stop').disabled=false;
   status('録音中です。英文を話して「録音を終了」を押してください。');
- }catch(e){status('マイクエラー：'+(e?.message||String(e)));stream?.getTracks().forEach(t=>t.stop());stream=null;recorder=null;}
+ }catch(e){clearInterval(meterTimer);if(meterContext){await meterContext.close();meterContext=null} status('マイクエラー：'+(e?.message||String(e)));stream?.getTracks().forEach(t=>t.stop());stream=null;recorder=null; $('record').disabled=false;} 
 };
+function db(x){return x>0?(20*Math.log10(x)).toFixed(1)+' dBFS':'−∞ dBFS'}
+async function processAudio(blob){
+ if(busy)return; busy=true; $('record').disabled=true; $('testfile').disabled=true; $('result').textContent='—'; $('score').textContent='一致率：—';
+ try{
+  if(!blob.size)throw new Error('録音データが空です。マイク設定を確認してください。');
+  if(playbackURL)URL.revokeObjectURL(playbackURL); playbackURL=URL.createObjectURL(blob); $('playback').src=playbackURL;
+  status('録音を解析しています…');
+  const ctx=new AudioContext(); let audio;
+  try{audio=await ctx.decodeAudioData(await blob.arrayBuffer())}finally{await ctx.close()}
+  if(audio.duration<0.3||audio.duration>30)throw new Error('音声は0.3〜30秒にしてください。長さ：'+audio.duration.toFixed(1)+'秒');
+  const offline=new OfflineAudioContext(1,Math.ceil(audio.duration*16000),16000);
+  const source=offline.createBufferSource(); source.buffer=audio;source.connect(offline.destination);source.start();
+  const samples=(await offline.startRendering()).getChannelData(0);
+  let sum=0,peak=0,active=0; const frame=320;
+  for(let i=0;i<samples.length;i++){const x=samples[i]; if(!Number.isFinite(x))throw new Error('波形に不正な値があります');sum+=x*x;peak=Math.max(peak,Math.abs(x))}
+  for(let i=0;i<samples.length;i+=frame){let energy=0,n=Math.min(frame,samples.length-i);for(let j=0;j<n;j++)energy+=samples[i+j]**2;if(Math.sqrt(energy/n)>0.01)active+=n}
+  const rms=Math.sqrt(sum/samples.length), fraction=active/samples.length;
+  let gain=1;
+  // Avoid amplifying near silence; cap gain and prevent clipping.
+  if(rms>=0.003 && peak>=0.015 && rms<0.04)gain=Math.min(4,0.04/rms,0.9/peak);
+  if(gain>1.01)for(let i=0;i<samples.length;i++)samples[i]*=gain;
+  $('diagnostics').textContent='長さ '+audio.duration.toFixed(2)+'秒／元の音声 '+audio.sampleRate+'Hz・'+audio.numberOfChannels+'ch／推論 16000Hz・1ch／RMS '+db(rms)+'／最大 '+db(peak)+'／音のある区間の目安 '+Math.round(fraction*100)+'%／増幅 '+gain.toFixed(1)+'倍。'+(rms<0.003||peak<0.015?' 音が非常に小さいか無音です。マイクを近づけて録り直してください。':fraction<0.05?' 音のある区間が短い可能性があります。再生して確認してください。':' 再生して声の有無と語尾を確認してください。');
+  if(rms<0.003||peak<0.015){status('音量が非常に小さいため、誤認識を避けて文字起こしを行いませんでした。');return}
+  status('Whisperで文字起こししています…'); const t0=performance.now();
+  const output=await transcriber(samples,{language:'english',task:'transcribe',chunk_length_s:30});
+  const text=(output?.text||'').trim(); $('result').textContent=text||'（認識できませんでした）';
+  if(text){const pct=score($('sentence').value,text);$('score').textContent='単語一致率：約'+pct+'% · 処理時間 '+((performance.now()-t0)/1000).toFixed(1)+'秒';$('score').className=pct>=80?'good':'bad'}
+  else $('score').textContent='採点できませんでした · 処理時間 '+((performance.now()-t0)/1000).toFixed(1)+'秒';
+  status(text?'文字起こしが完了しました。':'文字起こしが空でした。録音の再生と音量を確認してください。');
+ }catch(e){status('録音解析エラー：'+(e?.message||String(e)))}finally{busy=false;$('record').disabled=false;$('testfile').disabled=false}
+}
+$('testfile').onclick=()=>{const f=$('file').files[0];if(!f){status('音声ファイルを選んでください。');return}processAudio(f)};
 $('stop').onclick=()=>{
  if(!recorder||recorder.state!=='recording')return;
  $('stop').disabled=true;
