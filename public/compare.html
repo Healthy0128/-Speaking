@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>スピーキングトライ | 音声認識比較</title>
+<style>
+:root{font-family:system-ui,"Segoe UI",sans-serif;color:#142840;background:#eef3f8}*{box-sizing:border-box}
+body{margin:0}.wrap{max-width:720px;margin:35px auto;padding:0 18px}.panel{background:white;border-radius:20px;padding:25px;box-shadow:0 8px 32px #15384b12}
+h1{font-size:25px;margin:0 0 8px}p{line-height:1.7}.muted{color:#567086;font-size:13px}
+button,select{font:inherit;border:0;border-radius:12px;padding:13px 18px}button{background:#167b92;color:white;font-weight:700;cursor:pointer;margin:5px 5px 5px 0}button:disabled{opacity:.45;cursor:not-allowed}
+select{border:1px solid #c9d7df;background:white;width:100%}.question{background:#edf6f8;padding:15px;border-radius:12px;margin:15px 0}
+.bar{height:12px;background:#dce9ee;border-radius:9px;overflow:hidden}.fill{height:100%;width:0;background:#1589a3;transition:width .3s}
+.status{padding:12px;background:#f4f7fa;border-radius:10px;min-height:50px;white-space:pre-wrap}
+.result{font-size:19px;font-weight:650;overflow-wrap:anywhere}.good{color:#087b54}.bad{color:#a24a24}
+a{color:#126b87}small{font-size:12px}
+</style></head><body><main class="wrap"><section class="panel">
+<h1>🎙 音声認識 比較テスト</h1>
+<p class="muted">同じ録音で複数の音声認識を比較します。音声は端末内で処理します。モデルやプログラムの取得にはインターネット接続が必要です。</p>
+<p><a href="./">← 従来のスピーキングトライへ戻る</a></p>
+<label for="sentence">試す英文</label>
+<select id="sentence">
+<option>Do you know where your family is?</option>
+<option>Can you tell me where the restroom is?</option>
+<option>I want to get some water.</option>
+<option>Is there anything I can do for you?</option>
+<option>Could you tell me what happened?</option>
+</select>
+<div class="question"><b>読み上げる英文：</b><p id="prompt">Do you know where your family is?</p></div>
+<label for="engine">音声認識の種類</label><select id="engine"><option value="tiny">Whisper tiny.en（軽量）</option><option value="base">Whisper base.en（大きめ）</option><option value="vosk">Vosk small（軽量）</option></select><p class="muted">選択したモデルだけを読み込みます。初回の通信量・起動時間はモデルによって異なります。切替時は前のモデルを解放します。</p>
+<div><button id="load">① 選んだモデルを読み込む</button><button id="record" disabled>② 録音を開始</button><button id="stop" disabled>■ 録音を終了</button></div>
+<p id="status" class="status" aria-live="polite">認識方式を選び「モデルを読み込む」を押してください。</p>
+<div class="bar"><div class="fill" id="fill"></div></div><p class="muted" id="progress">待機中</p>
+<h3>録音の確認</h3><label for="meter">入力音量</label><progress id="meter" max="1" value="0" style="width:100%"></progress><p id="diagnostics" class="muted">録音すると音量や長さを表示します。</p><audio id="playback" controls style="width:100%"></audio><p class="muted">録音はこの端末内で再生・処理されます。音声ファイルを選んで試すこともできます。</p><input type="file" id="file" accept="audio/*"><button id="testfile" disabled>選択した音声を解析</button>
+<button id="rerun" disabled>同じ録音をこのモデルでもう一度解析</button><h3>比較結果</h3><div id="history"></div><h3>認識結果</h3><p id="result" class="result">—</p><p id="score" class="muted">一致率：—</p>
+<p class="muted">※ モデルのダウンロードは初回のみの想定です。学校端末のキャッシュ設定によっては再取得されます。文字起こしには数秒〜数十秒以上かかる場合があります。採点は単語単位の一致率を使った試験用の目安です。</p>
+</section></main>
+<script type="module">
+const $=id=>document.getElementById(id);
+let transcriber=null,voskModel=null,activeEngine=null,recorder=null,stream=null,chunks=[],loading=false, meterContext=null, meterTimer=null, playbackURL=null, busy=false,lastBlob=null;
+const labels={tiny:'Whisper tiny.en',base:'Whisper base.en',vosk:'Vosk small'};
+$('engine').onchange=()=>{ $('record').disabled=true; $('testfile').disabled=true; $('rerun').disabled=true; $('load').disabled=false; status('「モデルを読み込む」を押してください。録音は保持されています。'); };
+const status=text=>$('status').textContent=text;
+$('sentence').onchange=()=>$('prompt').textContent=$('sentence').value;
+function words(s){return s.toLowerCase().replace(/[^a-z\s']/g,' ').trim().split(/\s+/).filter(Boolean)}
+function score(expected,actual){
+ const a=words(expected),b=words(actual),dp=Array.from({length:a.length+1},(_,i)=>Array.from({length:b.length+1},(_,j)=>i?j?0:i:j));
+ for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+ return Math.max(0,Math.round(100*(1-dp[a.length][b.length]/Math.max(a.length,1))));
+}
+$('load').onclick=async()=>{
+ if(loading||busy||recorder)return; const choice=$('engine').value;
+ if(activeEngine===choice&&(transcriber||voskModel)){ $('record').disabled=false; $('testfile').disabled=false; $('rerun').disabled=!lastBlob; return; }
+ loading=true; $('load').disabled=true; $('record').disabled=true; $('testfile').disabled=true; $('rerun').disabled=true; $('engine').disabled=true;
+ try{
+  if(transcriber?.dispose)await transcriber.dispose(); transcriber=null;
+  if(voskModel)voskModel.terminate(); voskModel=null; activeEngine=null;
+  const started=performance.now();
+  if(choice==='vosk'){
+   status('Voskのライブラリを読み込んでいます…');
+   if(!window.Vosk)await new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/vosk-browser@0.0.5/dist/vosk.js';sc.onload=resolve;sc.onerror=()=>reject(new Error('Voskのライブラリを取得できません'));document.head.append(sc)});
+   status('Vosk軽量モデルを取得・初期化しています。最大120秒待ちます…');
+   voskModel=await new Promise((resolve,reject)=>{
+    const candidate=new window.Vosk.Model('https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz');let done=false;
+    const finish=(err)=>{if(done)return;done=true;clearTimeout(timer);if(err){try{candidate.terminate()}catch{}reject(new Error(err))}else resolve(candidate)};
+    const timer=setTimeout(()=>finish('Vosk初期化が120秒を超えました'),120000);
+    candidate.on('error',m=>finish(m?.error||'Vosk初期化エラー'));candidate.on('load',m=>finish(m?.result?null:'Voskモデルの読み込み失敗'));
+   });
+  }else{
+   status('Whisperのライブラリを読み込んでいます…');
+   const {pipeline,env}=await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/+esm');env.allowLocalModels=false;env.useBrowserCache=true;
+   transcriber=await pipeline('automatic-speech-recognition',choice==='tiny'?'Xenova/whisper-tiny.en':'Xenova/whisper-base.en',{quantized:true,progress_callback:p=>{
+    if(p.status==='progress'){$('fill').style.width=Math.min(100,Math.round(p.progress||0))+'%';$('progress').textContent='取得中：'+(p.file||'')+' '+Math.round(p.progress||0)+'%（ファイル単位）'}
+    else if(p.status==='initiate')status('モデルを取得しています：'+(p.file||''));
+    else if(p.status==='done')status('ファイル取得済み。残りの取得・初期化を待っています…');
+   }});
+  }
+  activeEngine=choice;$('fill').style.width='100%';$('progress').textContent=labels[choice]+' 準備完了 · '+((performance.now()-started)/1000).toFixed(1)+'秒';
+  status('準備完了。録音するか、保存した音声を再解析してください。'); $('record').disabled=false;$('testfile').disabled=false;$('rerun').disabled=!lastBlob;
+ }catch(e){status('起動エラー：'+(e?.message||String(e))+'。通信・端末メモリ・学校の設定を確認してください。');$('load').disabled=false}
+ finally{loading=false;$('engine').disabled=false}
+};
+$('record').onclick=async()=>{
+ if((!transcriber&&!voskModel)||recorder||busy)return;
+ try{
+  stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1}});
+  chunks=[];
+  recorder=new MediaRecorder(stream,MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?{mimeType:'audio/webm;codecs=opus'}:{});
+  recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+  meterContext=new AudioContext();
+  const analyser=meterContext.createAnalyser(); analyser.fftSize=2048;
+  meterContext.createMediaStreamSource(stream).connect(analyser);
+  const data=new Float32Array(analyser.fftSize);
+  meterTimer=setInterval(()=>{analyser.getFloatTimeDomainData(data);let sum=0;for(const x of data)sum+=x*x; $('meter').value=Math.min(1,Math.sqrt(sum/data.length)*8)},100);
+  recorder.onstop=async()=>{
+   clearInterval(meterTimer); $('meter').value=0; if(meterContext){await meterContext.close();meterContext=null}
+   stream?.getTracks().forEach(t=>t.stop());stream=null;
+   const blob=new Blob(chunks,{type:recorder.mimeType}); recorder=null;
+   lastBlob=blob; $('history').textContent=''; await processAudio(blob);
+  };
+  recorder.start();
+  $('record').disabled=true;$('stop').disabled=false;
+  status('録音中です。英文を話して「録音を終了」を押してください。');
+ }catch(e){clearInterval(meterTimer);if(meterContext){await meterContext.close();meterContext=null} status('マイクエラー：'+(e?.message||String(e)));stream?.getTracks().forEach(t=>t.stop());stream=null;recorder=null; $('record').disabled=false;} 
+};
+function db(x){return x>0?(20*Math.log10(x)).toFixed(1)+' dBFS':'−∞ dBFS'}
+async function processAudio(blob){
+ if(busy||(!transcriber&&!voskModel))return; busy=true; $('engine').disabled=true; $('load').disabled=true; $('rerun').disabled=true; $('record').disabled=true; $('testfile').disabled=true; $('result').textContent='—'; $('score').textContent='一致率：—';
+ try{
+  if(!blob.size)throw new Error('録音データが空です。マイク設定を確認してください。');
+  if(playbackURL)URL.revokeObjectURL(playbackURL); playbackURL=URL.createObjectURL(blob); $('playback').src=playbackURL;
+  status('録音を解析しています…');
+  const ctx=new AudioContext(); let audio;
+  try{audio=await ctx.decodeAudioData(await blob.arrayBuffer())}finally{await ctx.close()}
+  if(audio.duration<0.3||audio.duration>30)throw new Error('音声は0.3〜30秒にしてください。長さ：'+audio.duration.toFixed(1)+'秒');
+  const offline=new OfflineAudioContext(1,Math.ceil(audio.duration*16000),16000);
+  const source=offline.createBufferSource(); source.buffer=audio;source.connect(offline.destination);source.start();
+  const samples=(await offline.startRendering()).getChannelData(0);
+  let sum=0,peak=0,active=0; const frame=320;
+  for(let i=0;i<samples.length;i++){const x=samples[i]; if(!Number.isFinite(x))throw new Error('波形に不正な値があります');sum+=x*x;peak=Math.max(peak,Math.abs(x))}
+  for(let i=0;i<samples.length;i+=frame){let energy=0,n=Math.min(frame,samples.length-i);for(let j=0;j<n;j++)energy+=samples[i+j]**2;if(Math.sqrt(energy/n)>0.01)active+=n}
+  const rms=Math.sqrt(sum/samples.length), fraction=active/samples.length;
+  let gain=1;
+  // Avoid amplifying near silence; cap gain and prevent clipping.
+  if(rms>=0.003 && peak>=0.015 && rms<0.04)gain=Math.min(4,0.04/rms,0.9/peak);
+  if(gain>1.01)for(let i=0;i<samples.length;i++)samples[i]*=gain;
+  $('diagnostics').textContent='長さ '+audio.duration.toFixed(2)+'秒／元の音声 '+audio.sampleRate+'Hz・'+audio.numberOfChannels+'ch／推論 16000Hz・1ch／RMS '+db(rms)+'／最大 '+db(peak)+'／音のある区間の目安 '+Math.round(fraction*100)+'%／増幅 '+gain.toFixed(1)+'倍。'+(rms<0.003||peak<0.015?' 音が非常に小さいか無音です。マイクを近づけて録り直してください。':fraction<0.05?' 音のある区間が短い可能性があります。再生して確認してください。':' 再生して声の有無と語尾を確認してください。');
+  if(rms<0.003||peak<0.015){status('音量が非常に小さいため、誤認識を避けて文字起こしを行いませんでした。');return}
+  status(labels[activeEngine]+'で文字起こししています…'); const t0=performance.now();
+  let text='';
+  if(activeEngine==='vosk')text=await runVosk(samples);
+  else {const output=await transcriber(samples,{language:'english',task:'transcribe',chunk_length_s:30});text=(output?.text||'').trim();} $('result').textContent=text||'（認識できませんでした）';
+  if(text){const pct=score($('sentence').value,text);$('score').textContent='単語一致率：約'+pct+'% · 処理時間 '+((performance.now()-t0)/1000).toFixed(1)+'秒';$('score').className=pct>=80?'good':'bad'}
+  else $('score').textContent='採点できませんでした · 処理時間 '+((performance.now()-t0)/1000).toFixed(1)+'秒';
+  const row=document.createElement('p');row.textContent=labels[activeEngine]+'（'+$('sentence').value+'）：'+(text||'（空）')+' / '+(text?score($('sentence').value,text)+'%':'採点なし')+' / '+((performance.now()-t0)/1000).toFixed(1)+'秒';$('history').prepend(row);
+  status(text?'文字起こしが完了しました。':'文字起こしが空でした。録音の再生と音量を確認してください。');
+ }catch(e){status('録音解析エラー：'+(e?.message||String(e)))}finally{busy=false;$('engine').disabled=false;$('load').disabled=false;$('record').disabled=false;$('testfile').disabled=false;$('rerun').disabled=!lastBlob}
+}
+async function runVosk(samples){
+ const recognizer=new voskModel.KaldiRecognizer(16000);const parts=[];let partial='';
+ try{recognizer.on('result',m=>{if(m?.result?.text)parts.push(m.result.text)});recognizer.on('partialresult',m=>{partial=m?.result?.partial||''});
+ const all=new Float32Array(samples.length+19200);all.set(samples);
+ for(let i=0;i<all.length;i+=4096){const part=all.subarray(i,Math.min(i+4096,all.length));const b=new AudioBuffer({length:part.length,numberOfChannels:1,sampleRate:16000});b.copyToChannel(part,0);recognizer.acceptWaveform(b);if(i%32768===0)await new Promise(r=>setTimeout(r,0))}
+ await new Promise(r=>setTimeout(r,1700));return (parts.join(' ')||partial).trim();
+ }finally{try{recognizer.remove()}catch{}}
+}
+$('testfile').onclick=()=>{const f=$('file').files[0];if(!f){status('音声ファイルを選んでください。');return}lastBlob=f;$('history').textContent='';processAudio(f)};
+$('rerun').onclick=()=>{if(lastBlob)processAudio(lastBlob)};
+$('stop').onclick=()=>{
+ if(!recorder||recorder.state!=='recording')return;
+ $('stop').disabled=true;
+ recorder.stop();
+};
+</script></body></html>
